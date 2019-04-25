@@ -1,4 +1,4 @@
-const logger = new (require('../logger.js'))();
+const logger = new (require("../logger.js"))();
 
 console.log("current log level: " + logger.internalLogLevel);
 

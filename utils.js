@@ -1,50 +1,104 @@
 "use strict";
 
+const logger = new (require("./logger.js"))();
+const https = require("https");
+const url = require("url");
+
 exports.constructAPIResponse = (body, statusCode, headers) => {
-    var bodyString = "";
+  var bodyString = "";
 
-    if (body) {
-        if (typeof body === "string") {
-            bodyString = body;
-        } else {
-            bodyString = JSON.stringify(body);
-        }
-    } 
-
-    if (!statusCode) {
-        statusCode = 200;
+  if (body) {
+    if (typeof body === "string") {
+      bodyString = body;
+    } else {
+      bodyString = JSON.stringify(body);
     }
+  } 
 
-    var response = {
-        statusCode: statusCode,
-        body: bodyString
-    };
+  if (!statusCode) {
+      statusCode = 200;
+  }
 
-    if (headers) {
-        response.headers = headers;
-    }
+  var response = {
+    statusCode: statusCode,
+    body: bodyString
+  };
 
-    return response;
+  if (headers) {
+    response.headers = headers;
+  }
+
+  return response;
 };
 
 exports.constructAPIErrorResponse = (error, statusCode, headers) => {
-    var messageString = "";
-    
-    if (error) {
-        if (typeof error === "string") {
-            messageString = error;
-        } else {
-            messageString = error.message;
-        }
+  var messageString = "";
+  
+  if (error) {
+    if (typeof error === "string") {
+      messageString = error;
+    } else {
+      messageString = error.message;
     }
+  }
 
-    var body = {
-        message: messageString
-    };
+  var body = {
+    message: messageString
+  };
 
-    if (!statusCode) {
-        statusCode = 500;
+  if (!statusCode) {
+    statusCode = 500;
+  }
+  
+  return exports.constructAPIResponse(body, statusCode, headers);
+};
+
+exports.signalSuccessToCloudFormation = (event, context, physicalResourceId, data) => {
+  if (!data) data = {};
+  return sendCloudFormationResponse(event, context, "SUCCESS", physicalResourceId, data);
+};
+
+exports.signalFailureToCloudFormation = (event, context, physicalResourceId, data) => {
+  if (!data) data = {};
+  return sendCloudFormationResponse(event, context, "FAILED", physicalResourceId, data);
+};
+
+var sendCloudFormationResponse = (event, context, status, physicalResourceId, data) => {
+  logger.info("Sending response to: " + event.ResponseURL);
+
+  let responseBody = JSON.stringify({
+    Status: status,
+    Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
+    PhysicalResourceId: physicalResourceId,
+    StackId: event.StackId,
+    RequestId: event.RequestId,
+    LogicalResourceId: event.LogicalResourceId,
+    Data: data
+  });
+
+  let parsedUrl = url.parse(event.ResponseURL);
+  let options = {
+    hostname: parsedUrl.hostname,
+    port: 443,
+    path: parsedUrl.path,
+    method: "PUT",
+    headers: {
+      "Content-Type": "",
+      "Content-Length": responseBody.length
     }
-    
-    return exports.constructAPIResponse(body, statusCode, headers);
+  };
+
+  logger.debug("Using response body: " + responseBody);
+
+  let request = https.request(options, function (response) {
+    logger.info("Successfully signalled to CloudFormation: " + response.statusCode);
+  });
+
+  request.on("error", function (error) {
+    logger.error(error);
+  });
+
+  // send the request
+  request.write(responseBody);
+  request.end();
 };
