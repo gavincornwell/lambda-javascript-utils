@@ -13,5 +13,5 @@ NOTE: This project will become the base of an AWS Lambda layer to easily share t
 ## Test
 
 ```bash
-mocha test/*.js
+mocha
 ```

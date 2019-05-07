@@ -1,5 +1,5 @@
 let assert = require("assert");
-let utils = require("../utils.js");
+let utils = require("../layer-src/nodejs/utils.js");
 
 describe("The utils.constructAPIResponse function", function() {
     it("should return correctly formed object", function() {
@@ -110,5 +110,14 @@ describe("The utils.constructAPIErrorResponse function", function() {
         assert.strictEqual(body.message, "Something went wrong");
         assert.notStrictEqual(response.headers, undefined);
         assert.deepStrictEqual(response.headers, headers);
+    });
+});
+
+describe("The utils.signalSuccessToCloudFormation function", function() {
+    it("should attempt to send a signal to CloudFormation", function() {
+        // TODO: write some tests
+        var event = {};
+        var context = {};
+        // utils.signalSuccessToCloudFormation(event, context, "Test");
     });
 });

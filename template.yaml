@@ -1,0 +1,15 @@
+﻿AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Deploys a NodeJS Lambda layer containing utility functions
+
+Resources:
+  
+  NodeJSUtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: nodeJSUtils
+      Description: NodeJS Lambda utilities layer
+      ContentUri: layer-src
+      CompatibleRuntimes:
+        - nodejs8.10
+      LicenseInfo: Apache 2.0

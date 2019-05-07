@@ -64,8 +64,11 @@ exports.signalFailureToCloudFormation = (event, context, physicalResourceId, dat
 };
 
 var sendCloudFormationResponse = (event, context, status, physicalResourceId, data) => {
-  logger.info("Sending response to: " + event.ResponseURL);
+  logger.info(`Sending ${status} response to: ${event.ResponseURL}`);
 
+  // NOTE: use the built in network support so we don't need dependencies
+
+  // prepare the body
   let responseBody = JSON.stringify({
     Status: status,
     Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
@@ -76,6 +79,7 @@ var sendCloudFormationResponse = (event, context, status, physicalResourceId, da
     Data: data
   });
 
+  // prepare the request options
   let parsedUrl = url.parse(event.ResponseURL);
   let options = {
     hostname: parsedUrl.hostname,
@@ -90,10 +94,12 @@ var sendCloudFormationResponse = (event, context, status, physicalResourceId, da
 
   logger.debug("Using response body: " + responseBody);
 
+  // prepare the request
   let request = https.request(options, function (response) {
     logger.info("Successfully signalled to CloudFormation: " + response.statusCode);
   });
 
+  // log any errors
   request.on("error", function (error) {
     logger.error(error);
   });
